@@ -188,8 +188,8 @@ export default function Page() {
       <div className="w-full max-w-screen-lg">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-semibold">Memory Match</h1>
-            <p className="text-sm text-neutral-400">Timed rounds — symmetric grid, real challenge</p>
+            <h1 className="text-3xl font-semibold">snapMatch</h1>
+            <p className="text-sm text-neutral-400">Pattern matching game. Timed challange. CTI assignment by errolm</p>
           </div>
 
           <div className="flex items-center gap-3">
