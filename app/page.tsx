@@ -152,7 +152,7 @@ export default function Page() {
           setMatchedIds((m) => [...m, a.id, b.id]);
           setRevealed([]);
           setLock(false);
-          if (cfg.shuffleOn === "shuffle-on-match") shuffleUnmatched(true);
+          if (cfg.shuffleOn === "every3moves") shuffleUnmatched(true);
         }, Math.max(120, cfg.speed * 400));
       } else {
         window.setTimeout(() => {
