@@ -35,21 +35,14 @@ const DIFFICULTIES = {
     speed: 0.14,
     shuffleOn: "none" as const,
     timeLimit: 60,
-  }, // 1 min
-  medium: {
-    cols: 6,
-    total: 24,
-    speed: 0.22,
-    shuffleOn: "move" as const,
-    timeLimit: 120,
-  }, // 2 min
+  },
   hard: {
     cols: 6,
     total: 36,
-    speed: 0.42,
+    speed: 0.14,
     shuffleOn: "every3moves" as const,
     timeLimit: 180,
-  }, // 3 min
+  },
 };
 
 type DiffKey = keyof typeof DIFFICULTIES;
@@ -144,32 +137,29 @@ export default function Page() {
     setShowLevelModal(true);
   }
 
-  function restart() {
+  function restartQuick() {
     startGame(diff);
   }
 
   function shuffleUnmatched(keepRevealed = true) {
+    if (revealed.length > 0) return;
+
     setDeck((prev) => {
+      const cloned = prev.map((c) => ({ ...c }));
       const revealedSet = new Set(keepRevealed ? revealed : []);
       const matchedSet = new Set(matchedIds);
-      const unmatched = prev.filter(
+
+      const unmatched = cloned.filter(
         (c) => !matchedSet.has(c.id) && !revealedSet.has(c.id)
       );
-      const kept = prev.filter(
-        (c) => matchedSet.has(c.id) || (keepRevealed && revealedSet.has(c.id))
-      );
       const shuffledUnmatched = shuffle(unmatched);
-      const merged: typeof prev = [];
+
       let uIndex = 0;
-      for (let i = 0; i < prev.length; i++) {
-        const p = prev[i];
-        if (matchedSet.has(p.id) || (keepRevealed && revealedSet.has(p.id))) {
-          merged.push(p);
-        } else {
-          merged.push(shuffledUnmatched[uIndex++]!);
-        }
-      }
-      return merged;
+      return cloned.map((c) =>
+        matchedSet.has(c.id) || (keepRevealed && revealedSet.has(c.id))
+          ? c
+          : shuffledUnmatched[uIndex++]
+      );
     });
   }
 
@@ -196,18 +186,15 @@ export default function Page() {
           setMatchedIds((m) => [...m, a.id, b.id]);
           setRevealed([]);
           setLock(false);
-          if (cfg.shuffleOn === "every3moves") shuffleUnmatched(true);
+          if (cfg.shuffleOn === "every3moves") {
+            if ((moves + 1) % 3 === 0) shuffleUnmatched(true);
+          }
         }, Math.max(120, cfg.speed * 400));
       } else {
         window.setTimeout(() => {
           setRevealed([]);
           setLock(false);
         }, Math.max(220, cfg.speed * 700));
-      }
-
-      if (cfg.shuffleOn === "move") shuffleUnmatched(false);
-      if (cfg.shuffleOn === "every3moves") {
-        if ((moves + 1) % 3 === 0) shuffleUnmatched(true);
       }
     }
   }
@@ -230,48 +217,51 @@ export default function Page() {
   const timeRemaining = Math.max(0, timeLimit - seconds);
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-screen-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-semibold">snapMatch</h1>
-            <p className="text-sm text-neutral-400">
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl font-semibold">snapMatch</h1>
+            <p className="text-sm sm:text-base text-neutral-400">
               Timed pattern-matching game
             </p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap justify-end">
-            <div className="text-sm text-neutral-300 text-center">
+            <div className="text-sm sm:text-base text-neutral-200 text-center px-3 py-1 bg-neutral-900 rounded-md">
               <div className="font-semibold tracking-wide">Moves</div>
-              <div className="text-lg font-bold">{moves}</div>
+              <div className="text-xl sm:text-2xl font-extrabold">{moves}</div>
             </div>
 
-            <div className="text-sm text-neutral-300 text-center">
+            <div className="text-sm sm:text-base text-neutral-200 text-center px-3 py-1 bg-neutral-900 rounded-md">
               <div className="font-semibold tracking-wide">Time</div>
-              <div className="text-lg font-bold">{formatTime(seconds)}</div>
+              <div className="text-xl sm:text-2xl font-extrabold">
+                {formatTime(seconds)}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
               <Button
                 onClick={openLevelModalForNew}
-                className="bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer"
+                className="bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer px-3 py-2"
               >
                 New
               </Button>
+
               <Button
                 onClick={() => shuffleUnmatched(true)}
-                className="bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer"
+                className="bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer px-3 py-2"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   className="lucide lucide-arrow-down-up-icon lucide-arrow-down-up"
                 >
                   <path d="m3 16 4 4 4-4" />
@@ -279,28 +269,29 @@ export default function Page() {
                   <path d="m21 8-4-4-4 4" />
                   <path d="M17 4v16" />
                 </svg>
-                Reshuffle
+                <span className="ml-2 hidden sm:inline">Reshuffle</span>
               </Button>
+
               <Button
-                onClick={restart}
-                className="bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer"
+                onClick={restartQuick}
+                className="bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer px-3 py-2"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   className="lucide lucide-rotate-cw-icon lucide-rotate-cw"
                 >
                   <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
                   <path d="M21 3v5h-5" />
                 </svg>
-                Restart
+                <span className="ml-2 hidden sm:inline">Restart</span>
               </Button>
             </div>
           </div>
@@ -313,9 +304,11 @@ export default function Page() {
               style={{ width: `${timePct}%` }}
             />
           </div>
-          <div className="text-xs text-neutral-500 mt-1">
-            {formatTime(seconds)} / {formatTime(timeLimit)} • {timeRemaining}s
-            left
+          <div className="text-xs text-neutral-500 mt-2 flex items-center justify-between">
+            <div>
+              {formatTime(seconds)} / {formatTime(timeLimit)}
+            </div>
+            <div>{timeRemaining}s left</div>
           </div>
         </div>
 
@@ -385,7 +378,7 @@ export default function Page() {
         </div>
 
         {showWinModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
             <div className="w-full max-w-md p-4 sm:p-6 rounded-xl bg-neutral-900 border border-neutral-800">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-semibold">You win!</h2>
@@ -419,20 +412,20 @@ export default function Page() {
                 <Button
                   onClick={() => {
                     setShowWinModal(false);
-                    restart();
+                    restartQuick();
                   }}
                   className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg cursor-pointer"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     className="lucide lucide-rotate-ccw-icon lucide-rotate-ccw"
                   >
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -450,14 +443,14 @@ export default function Page() {
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     className="lucide lucide-settings-icon lucide-settings"
                   >
                     <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
@@ -471,7 +464,7 @@ export default function Page() {
         )}
 
         {showLoseModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
             <div className="w-full max-w-md p-6 rounded-xl bg-neutral-900 border border-neutral-800">
               <h2 className="text-2xl font-semibold mb-2 text-rose-400">
                 Time's up
@@ -497,20 +490,20 @@ export default function Page() {
                 <Button
                   onClick={() => {
                     setShowLoseModal(false);
-                    restart();
+                    restartQuick();
                   }}
                   className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-md cursor-pointer"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     className="lucide lucide-rotate-ccw-icon lucide-rotate-ccw"
                   >
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -527,14 +520,14 @@ export default function Page() {
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     className="lucide lucide-settings-icon lucide-settings"
                   >
                     <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
@@ -548,7 +541,7 @@ export default function Page() {
         )}
 
         {showLevelModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md p-6 rounded-xl bg-neutral-900 border border-neutral-800">
               <h2 className="text-2xl font-semibold mb-2">Choose difficulty</h2>
               <p className="text-sm text-neutral-400 mb-4">
@@ -556,7 +549,7 @@ export default function Page() {
                 before time runs out.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <button
                   onClick={() => startGame("easy")}
                   className="px-4 py-3 rounded-lg bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer text-left"
@@ -566,28 +559,24 @@ export default function Page() {
                 </button>
 
                 <button
-                  onClick={() => startGame("medium")}
-                  className="px-4 py-3 rounded-lg bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer text-left"
-                >
-                  <div className="font-semibold">Medium</div>
-                  <div className="text-xs text-neutral-400">6×4 — 2:00</div>
-                </button>
-
-                <button
                   onClick={() => startGame("hard")}
                   className="px-4 py-3 rounded-lg bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 cursor-pointer text-left"
                 >
                   <div className="font-semibold">Hard</div>
-                  <div className="text-xs text-neutral-400">6×6 — 3:00</div>
+                  <div className="text-xs text-neutral-400">
+                    6×6 — 3:00 (shuffle occasionally)
+                  </div>
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        <p className="text-sm text-neutral-300 text-center mt-12 mb-4 font-medium tracking-wide">
-          CTI Assignment • errolm
-        </p>
+        <footer className="mt-8">
+          <p className="text-sm sm:text-base text-neutral-300 text-center mb-4 font-medium tracking-wide">
+            CTI Assignment • errolm
+          </p>
+        </footer>
       </div>
     </div>
   );
